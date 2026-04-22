@@ -1,7 +1,14 @@
 [build]
-  publish = "frontend"
+  # Tell Netlify where the frontend code lives
+  base = "frontend"
+  
+  # Tell Netlify where the BUILT files go (usually 'dist' for Vite or 'build' for React)
+  publish = "dist"
+  
+  # The command to actually build your site
+  command = "npm run build"
 
 [[redirects]]
   from = "/*"
-  to   = "/index.html"
+  to = "/index.html"
   status = 200
