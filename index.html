@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AOM Analytics — Data Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Base ───────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #07090f;
+  --bg1:       #0d1117;
+  --bg2:       #111827;
+  --bg3:       #1a2333;
+  --border:    #1e2a3e;
+  --border2:   #263348;
+  --text:      #dde4f0;
+  --text2:     #8899b4;
+  --text3:     #4d6080;
+  --blue:      #38bdf8;
+  --blue2:     #0ea5e9;
+  --amber:     #f59e0b;
+  --green:     #10b981;
+  --red:       #ef4444;
+  --purple:    #a78bfa;
+  --font-data: 'Space Mono', monospace;
+  --font-ui:   'DM Sans', sans-serif;
+  --sidebar-w: 240px;
+  --topbar-h:  60px;
+  --radius:    6px;
+  --radius2:   10px;
+}
+
+html { font-size: 14px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg1); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Sidebar ────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  transition: transform .25s ease;
+}
+.sidebar-logo {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-mark {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.logo-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+.logo-name span { color: var(--blue); }
+
+.nav-section {
+  padding: 20px 12px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  margin: 1px 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s ease;
+  color: var(--text2);
+  font-size: 13.5px;
+  font-weight: 500;
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg2); color: var(--text); }
+.nav-item.active {
+  background: rgba(56,189,248,.1);
+  color: var(--blue);
+  border: 1px solid rgba(56,189,248,.18);
+}
+.nav-icon { font-size: 15px; min-width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 10px;
+  font-family: var(--font-data);
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+.user-pill {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.user-pill:hover { background: var(--bg2); }
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--amber), var(--red));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 600; }
+.user-role { font-size: 11px; color: var(--text3); }
+
+/* ── Main ───────────────────────────────────── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Topbar ─────────────────────────────────── */
+#topbar {
+  height: var(--topbar-h);
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.page-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.page-subtitle { font-size: 12px; color: var(--text3); font-weight: 400; }
+
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.period-tabs {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.period-tab {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all .15s;
+  border: none;
+  background: none;
+  font-family: var(--font-data);
+}
+.period-tab.active { background: var(--blue); color: #fff; }
+
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text2);
+  transition: all .15s;
+  position: relative;
+}
+.icon-btn:hover { border-color: var(--blue); color: var(--blue); }
+.notif-dot {
+  position: absolute; top: 5px; right: 5px;
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 1.5px solid var(--bg1);
+}
+
+/* ── Content ────────────────────────────────── */
+#content {
+  padding: 24px;
+  flex: 1;
+}
+
+/* ── Views ──────────────────────────────────── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── KPI Grid ───────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  opacity: 0;
+  transition: opacity .2s;
+}
+.kpi-card:hover::after { opacity: 1; }
+.kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
+.kpi-value { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: var(--text); margin: 6px 0 4px; }
+.kpi-delta { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+.kpi-delta.up { color: var(--green); }
+.kpi-delta.down { color: var(--red); }
+.kpi-icon { position: absolute; top: 16px; right: 16px; font-size: 18px; opacity: .4; }
+
+/* ── Grid Layouts ───────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; margin-bottom: 14px; }
+.mb14 { margin-bottom: 14px; }
+
+/* ── Chart Card ─────────────────────────────── */
+.card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  overflow: hidden;
+}
+.card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title { font-size: 13px; font-weight: 600; flex: 1; }
+.card-subtitle { font-size: 11px; color: var(--text3); }
+.card-body { padding: 16px 18px; }
+.card-body.no-pad { padding: 0; }
+
+.chart-wrap { position: relative; }
+.chart-wrap canvas { max-height: 240px; }
+.chart-wrap.tall canvas { max-height: 300px; }
+.chart-wrap.short canvas { max-height: 160px; }
+
+/* ── Table ──────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.data-table th {
+  background: var(--bg2);
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  padding: 9px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.data-table tbody tr:hover { background: rgba(255,255,255,.025); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+.mono { font-family: var(--font-data); font-size: 12px; }
+
+/* ── Badges ─────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-data);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.badge-green  { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.25); }
+.badge-blue   { background: rgba(56,189,248,.15); color: var(--blue);  border: 1px solid rgba(56,189,248,.25); }
+.badge-amber  { background: rgba(245,158,11,.15); color: var(--amber); border: 1px solid rgba(245,158,11,.25); }
+.badge-red    { background: rgba(239,68,68,.15);  color: var(--red);   border: 1px solid rgba(239,68,68,.25);  }
+.badge-purple { background: rgba(167,139,250,.15);color: var(--purple);border: 1px solid rgba(167,139,250,.25);}
+
+/* ── Progress ───────────────────────────────── */
+.prog-bar-wrap { background: var(--bg3); border-radius: 3px; overflow: hidden; height: 5px; }
+.prog-bar      { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+/* ── Spark ──────────────────────────────────── */
+.spark-cell { display: flex; align-items: center; gap: 6px; }
+.delta-chip {
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.delta-chip.pos { background: rgba(16,185,129,.18); color: var(--green); }
+.delta-chip.neg { background: rgba(239,68,68,.18);  color: var(--red);   }
+
+/* ── Activity Feed ──────────────────────────── */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.activity-text { flex: 1; }
+.activity-label { font-size: 12.5px; font-weight: 500; }
+.activity-meta  { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.activity-val   { font-family: var(--font-data); font-size: 12px; color: var(--amber); font-weight: 700; white-space: nowrap; }
+
+/* ── Funnel ─────────────────────────────────── */
+.funnel-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.funnel-row:last-child { border-bottom: none; }
+.funnel-stage { font-size: 12px; font-weight: 500; min-width: 110px; }
+.funnel-bar-wrap { flex: 1; background: var(--bg3); border-radius: 3px; overflow: hidden; height: 8px; }
+.funnel-bar { height: 100%; background: linear-gradient(90deg, var(--blue), var(--purple)); border-radius: 3px; transition: width .7s ease; }
+.funnel-count { font-family: var(--font-data); font-size: 11px; color: var(--text2); min-width: 60px; text-align: right; }
+.funnel-pct   { font-family: var(--font-data); font-size: 10px; color: var(--text3); min-width: 40px; text-align: right; }
+
+/* ── Demographic Rows ───────────────────────── */
+.demo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.demo-label { font-size: 12px; color: var(--text2); min-width: 60px; }
+.demo-bar-wrap { flex: 1; background: var(--bg3); border-radius: 3px; height: 6px; overflow: hidden; }
+.demo-bar { height: 100%; border-radius: 3px; }
+.demo-pct { font-family: var(--font-data); font-size: 11px; color: var(--text2); min-width: 36px; text-align: right; }
+
+/* ── Alert Bar ──────────────────────────────── */
+.alert-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.alert-row.info    { background: rgba(56,189,248,.08);  border: 1px solid rgba(56,189,248,.2);  color: var(--blue);  }
+.alert-row.warn    { background: rgba(245,158,11,.08);  border: 1px solid rgba(245,158,11,.2);  color: var(--amber); }
+.alert-row.success { background: rgba(16,185,129,.08);  border: 1px solid rgba(16,185,129,.2);  color: var(--green); }
+
+/* ── Pagination ─────────────────────────────── */
+.pagination { display: flex; align-items: center; gap: 6px; padding: 12px 18px; border-top: 1px solid var(--border); }
+.pag-btn {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-data);
+  transition: all .15s;
+}
+.pag-btn:hover { border-color: var(--blue); color: var(--blue); }
+.pag-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.pag-info { font-size: 11px; color: var(--text3); margin-left: auto; font-family: var(--font-data); }
+
+/* ── Filter Bar ─────────────────────────────── */
+.filter-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  flex: 1; min-width: 200px;
+}
+.search-box input {
+  background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--font-ui); font-size: 13px;
+  flex: 1;
+}
+.search-box input::placeholder { color: var(--text3); }
+.filter-select {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 6px 10px;
+  color: var(--text); font-family: var(--font-ui); font-size: 12px;
+  outline: none; cursor: pointer;
+}
+
+/* ── Reports ─────────────────────────────────── */
+.report-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.report-row:last-child { border-bottom: none; }
+.report-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.report-name   { font-size: 13px; font-weight: 500; }
+.report-meta   { font-size: 11px; color: var(--text3); }
+.report-type   { margin-left: auto; }
+.download-btn {
+  padding: 5px 12px; border-radius: var(--radius);
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+  font-family: var(--font-ui);
+}
+.download-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── Loading ────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%);
+  background-size: 200% 100%;
+  animation: skel 1.4s ease infinite;
+  border-radius: 4px;
+}
+@keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── Loader Overlay ─────────────────────────── */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  transition: opacity .4s ease;
+}
+.loader-logo { font-family: var(--font-data); font-size: 32px; font-weight: 700; color: var(--blue); letter-spacing: 3px; }
+.loader-sub  { font-size: 12px; color: var(--text3); margin-top: 8px; letter-spacing: 2px; text-transform: uppercase; }
+.loader-bar  { width: 200px; height: 2px; background: var(--bg3); border-radius: 2px; margin-top: 24px; overflow: hidden; }
+.loader-prog { height: 100%; background: linear-gradient(90deg, var(--blue), var(--purple)); width: 0; transition: width .4s ease; border-radius: 2px; }
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 1100px) {
+  .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  :root { --sidebar-w: 0px; }
+  #sidebar { transform: translateX(-240px); width: 240px; }
+  #sidebar.open { transform: translateX(0); }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">AOM</div>
+  <div class="loader-sub">Analytics Platform</div>
+  <div class="loader-bar"><div class="loader-prog" id="lp"></div></div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AOM</div>
+    <div class="logo-name"><span>Analytics</span> Studio</div>
+  </div>
+
+  <div class="nav-section">Dashboards</div>
+  <div class="nav-item active" data-view="overview">
+    <span class="nav-icon">⬡</span> Overview
+  </div>
+  <div class="nav-item" data-view="sales">
+    <span class="nav-icon">◈</span> Sales
+  </div>
+  <div class="nav-item" data-view="users">
+    <span class="nav-icon">◉</span> Users
+  </div>
+  <div class="nav-item" data-view="products">
+    <span class="nav-icon">◫</span> Products
+  </div>
+
+  <div class="nav-section">Management</div>
+  <div class="nav-item" data-view="orders">
+    <span class="nav-icon">◱</span> Orders
+    <span class="nav-badge" id="order-badge">48K</span>
+  </div>
+  <div class="nav-item" data-view="reports">
+    <span class="nav-icon">◧</span> Reports
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-pill">
+      <div class="avatar">AK</div>
+      <div class="user-info">
+        <div class="user-name">Arjun K.</div>
+        <div class="user-role">Data Analyst</div>
+      </div>
+      <span style="color:var(--text3);font-size:14px;">⋮</span>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div>
+      <div class="page-title" id="topbar-title">Overview</div>
+      <div class="page-subtitle" id="topbar-sub">Last updated just now</div>
+    </div>
+    <div class="topbar-right">
+      <div class="period-tabs">
+        <button class="period-tab" data-period="3m">3M</button>
+        <button class="period-tab" data-period="6m">6M</button>
+        <button class="period-tab active" data-period="12m">12M</button>
+      </div>
+      <div class="icon-btn" title="Refresh" onclick="refreshData()">↺</div>
+      <div class="icon-btn" title="Notifications">
+        🔔<span class="notif-dot"></span>
+      </div>
+      <div class="icon-btn" title="Settings" onclick="navTo('reports')">⚙</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ════════════════════ OVERVIEW ════════════════════ -->
+    <div class="view active" id="view-overview">
+      <div class="kpi-grid" id="kpi-grid">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Revenue vs Target</span>
+            <span class="card-subtitle" id="rev-period">12 months</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="chart-revenue"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Category Revenue</span></div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="chart-category"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Top Categories Performance</span></div>
+          <div class="card-body no-pad">
+            <table class="data-table" id="tbl-categories">
+              <thead><tr>
+                <th>Category</th><th>Revenue</th><th>Orders</th><th>Growth</th><th>Share</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Live Activity</span></div>
+          <div class="card-body">
+            <div id="activity-feed"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ SALES ════════════════════ -->
+    <div class="view" id="view-sales">
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Gross vs Net Revenue</span></div>
+          <div class="card-body">
+            <div class="chart-wrap tall"><canvas id="chart-sales-timeline"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Conversion Funnel</span></div>
+          <div class="card-body">
+            <div id="funnel-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Revenue by Region</span></div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="chart-regions"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Channel Performance</span></div>
+          <div class="card-body no-pad">
+            <table class="data-table" id="tbl-channels">
+              <thead><tr>
+                <th>Channel</th><th>Revenue</th><th>Orders</th><th>CAC</th><th>ROAS</th><th>CVR</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ USERS ════════════════════ -->
+    <div class="view" id="view-users">
+      <div class="kpi-grid" id="user-kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Users</div>
+          <div class="kpi-value mono" id="u-total">94,701</div>
+          <div class="kpi-delta up">▲ 7.4% vs last period</div>
+          <div class="kpi-icon">◉</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">New This Month</div>
+          <div class="kpi-value mono" id="u-new">7,840</div>
+          <div class="kpi-delta up">▲ 12.1%</div>
+          <div class="kpi-icon">✦</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Churn Rate</div>
+          <div class="kpi-value mono" id="u-churn">2.4%</div>
+          <div class="kpi-delta up">▼ 0.3pp improved</div>
+          <div class="kpi-icon">↩</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg LTV</div>
+          <div class="kpi-value mono" id="u-ltv">$412</div>
+          <div class="kpi-delta up">▲ 9.2%</div>
+          <div class="kpi-icon">◈</div>
+        </div>
+      </div>
+
+      <div class="grid-2-1">
+        <div class="card">
+          <div class="card-header"><span class="card-title">User Growth</span></div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="chart-user-growth"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Demographics</span></div>
+          <div class="card-body" id="demographics-panel"></div>
+        </div>
+      </div>
+
+      <div class="card mb14">
+        <div class="card-header"><span class="card-title">User Segments</span></div>
+        <div class="card-body no-pad">
+          <table class="data-table" id="tbl-segments">
+            <thead><tr>
+              <th>Segment</th><th>Users</th><th>Avg LTV</th><th>Avg Orders</th><th>Churn Risk</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Retention Cohorts (Day)</span></div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-retention"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ PRODUCTS ════════════════════ -->
+    <div class="view" id="view-products">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Revenue by Category</span></div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="chart-prod-cat"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Inventory Health</span></div>
+          <div class="card-body no-pad">
+            <table class="data-table" id="tbl-inventory">
+              <thead><tr>
+                <th>Category</th><th>In Stock</th><th>Low Stock</th><th>Out</th><th>Value</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Top Products by Revenue</span>
+          <span class="card-subtitle">Sorted by gross revenue</span>
+        </div>
+        <div class="card-body no-pad">
+          <table class="data-table" id="tbl-products">
+            <thead><tr>
+              <th>#</th><th>Product</th><th>Category</th><th>Revenue</th><th>Units</th><th>Margin</th><th>Rating</th><th>Trend</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ ORDERS ════════════════════ -->
+    <div class="view" id="view-orders">
+      <div class="kpi-grid" id="orders-kpi"></div>
+
+      <div class="filter-bar">
+        <div class="search-box">
+          <span style="color:var(--text3)">⌕</span>
+          <input type="text" placeholder="Search by order ID or customer…" id="order-search" oninput="filterOrders()">
+        </div>
+        <select class="filter-select" id="order-status-filter" onchange="filterOrders()">
+          <option value="">All Statuses</option>
+          <option>Completed</option>
+          <option>Processing</option>
+          <option>Shipped</option>
+          <option>Cancelled</option>
+          <option>Refunded</option>
+        </select>
+        <select class="filter-select" id="order-region-filter" onchange="filterOrders()">
+          <option value="">All Regions</option>
+          <option>North</option><option>South</option><option>East</option><option>West</option><option>Central</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="card-body no-pad">
+          <table class="data-table" id="tbl-orders">
+            <thead><tr>
+              <th>Order ID</th><th>Customer</th><th>Category</th><th>Amount</th><th>Items</th><th>Region</th><th>Status</th><th>Date</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="orders-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════ REPORTS ════════════════════ -->
+    <div class="view" id="view-reports">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Available Reports</span></div>
+          <div class="card-body no-pad" id="reports-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Scheduled Reports</span></div>
+          <div class="card-body no-pad" id="scheduled-list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">System Alerts</span></div>
+        <div class="card-body" id="alerts-panel"></div>
+      </div>
+    </div>
+
+  </div><!-- #content -->
+</div><!-- #main -->
+
+<script>
+/* ════════════════════════════════════════════
+   CONFIG  ← edit PROD_API after deploying backend
+════════════════════════════════════════════ */
+const PROD_API  = 'https://YOUR-APP-NAME.onrender.com/api'; // ← paste Render URL here
+const LOCAL_API = 'http://localhost:3001/api';
+const isLocal   = ['localhost','127.0.0.1'].includes(window.location.hostname);
+const API       = isLocal ? LOCAL_API : PROD_API;
+let CHARTS = {};
+let ALL_ORDERS = [];
+let ORDERS_PAGE = 1;
+const PAGE_SIZE = 15;
+
+/* ════════════════════════════════════════════
+   BOOT LOADER
+════════════════════════════════════════════ */
+(async () => {
+  const lp = document.getElementById('lp');
+  const loader = document.getElementById('loader');
+  let p = 0;
+  const iv = setInterval(() => {
+    p = Math.min(p + Math.random() * 18, 92);
+    lp.style.width = p + '%';
+  }, 120);
+  await new Promise(r => setTimeout(r, 800));
+  clearInterval(iv);
+  lp.style.width = '100%';
+  await new Promise(r => setTimeout(r, 300));
+  loader.style.opacity = '0';
+  await new Promise(r => setTimeout(r, 400));
+  loader.remove();
+  initNav();
+  loadView('overview');
+})();
+
+/* ════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════ */
+function initNav() {
+  document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+    el.addEventListener('click', () => navTo(el.dataset.view));
+  });
+  document.querySelectorAll('.period-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const active = document.querySelector('.view.active')?.id?.replace('view-','');
+      if (active) loadView(active);
+    });
+  });
+}
+
+function navTo(view) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.querySelector(`.nav-item[data-view="${view}"]`);
+  if (nav) nav.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const vEl = document.getElementById(`view-${view}`);
+  if (vEl) vEl.classList.add('active');
+  document.getElementById('topbar-title').textContent =
+    ({overview:'Overview',sales:'Sales Analytics',users:'User Analytics',
+      products:'Products',orders:'Orders',reports:'Reports'})[view] || view;
+  document.getElementById('topbar-sub').textContent = 'Last updated just now';
+  loadView(view);
+}
+
+function getPeriod() {
+  return document.querySelector('.period-tab.active')?.dataset?.period || '12m';
+}
+
+async function refreshData() {
+  const active = document.querySelector('.view.active')?.id?.replace('view-','');
+  if (active) loadView(active);
+}
+
+/* ════════════════════════════════════════════
+   DATA FETCH (with mock fallback)
+════════════════════════════════════════════ */
+async function apiFetch(path) {
+  try {
+    const r = await fetch(API + path, { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) throw new Error('API error');
+    return await r.json();
+  } catch {
+    return null; // use mock below
+  }
+}
+
+/* ════════════════════════════════════════════
+   MOCK DATA (mirrors backend)
+════════════════════════════════════════════ */
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CATS   = ['Groceries','Electronics','Fashion','Home & Living','Beauty','Sports','Books','Toys'];
+const REGS   = ['North','South','East','West','Central'];
+const CHANS  = ['Organic','Paid Search','Social','Email','Direct','Referral'];
+function r(a,b)      { return Math.floor(Math.random()*(b-a+1))+a; }
+function rf(a,b,d=2) { return parseFloat((Math.random()*(b-a)+a).toFixed(d)); }
+function trend(base, i, n=0.09) {
+  return Math.round(base * (1+.015*i) * (1+.12*Math.sin(i/12*Math.PI*2-1)) * (1+(Math.random()-.5)*n));
+}
+
+function mockOverview() {
+  return {
+    kpis: {
+      revenue:        { value:2847392, prev:2510840, unit:'$', label:'Total Revenue' },
+      orders:         { value:48320,   prev:43100,   unit:'',  label:'Total Orders'  },
+      activeUsers:    { value:94701,   prev:88200,   unit:'',  label:'Active Users'  },
+      conversionRate: { value:3.84,    prev:3.51,    unit:'%', label:'Conversion Rate'},
+      avgOrderValue:  { value:58.94,   prev:55.12,   unit:'$', label:'Avg Order Value'},
+      returnRate:     { value:4.2,     prev:4.8,     unit:'%', label:'Return Rate'    }
+    },
+    revenueByMonth: MONTHS.map((m,i)=>({month:m,revenue:trend(210000,i,.09),orders:trend(3900,i,.07),visitors:trend(28000,i,.06),target:trend(220000,i,.03)})),
+    categoryBreakdown: CATS.map(cat=>({category:cat,revenue:r(120000,620000),orders:r(1200,9400),growth:rf(-5,22)})),
+    recentActivity: Array.from({length:8},(_,i)=>{
+      const t=['order','refund','user_signup','review','low_stock'][r(0,4)];
+      return {id:i,type:t,label:{order:'New order placed',refund:'Refund requested',user_signup:'New user registered',review:'Product reviewed',low_stock:'Low stock alert'}[t],value:t==='order'?`$${rf(20,300)}`:'',time:`${r(1,59)}m ago`};
+    })
+  };
+}
+
+function mockSales(period) {
+  const m = period==='3m'?3:period==='6m'?6:12;
+  return {
+    timeline: MONTHS.slice(-m).map((mo,i)=>({month:mo,gross:trend(240000,i,.10),net:trend(195000,i,.10),refunds:trend(9000,i,.15),target:trend(230000,i,.02)})),
+    byRegion: REGS.map(rg=>({region:rg,revenue:r(300000,800000),orders:r(3000,12000),growth:rf(-3,28)})),
+    byChannel: CHANS.map(ch=>({channel:ch,revenue:r(80000,550000),orders:r(800,8000),cac:rf(4,38),roas:rf(1.2,8.5),cvr:rf(1.1,6.9)})),
+    funnel:[{stage:'Visitors',count:284000},{stage:'Product Views',count:148000},{stage:'Add to Cart',count:48200},{stage:'Checkout',count:22400},{stage:'Purchased',count:18320}]
+  };
+}
+
+function mockUsers() {
+  return {
+    growth: MONTHS.map((m,i)=>({month:m,new:trend(7200,i,.11),returning:trend(12000,i,.08),churned:trend(1400,i,.14)})),
+    demographics: {
+      age:[{group:'18–24',pct:18.4},{group:'25–34',pct:34.7},{group:'35–44',pct:24.1},{group:'45–54',pct:13.8},{group:'55+',pct:9.0}],
+      device:[{type:'Mobile',pct:62.3},{type:'Desktop',pct:31.1},{type:'Tablet',pct:6.6}]
+    },
+    retention: MONTHS.map((m,i)=>({month:m,d1:rf(55,75),d7:rf(28,48),d30:rf(14,28),d90:rf(6,18)})),
+    topSegments:[
+      {segment:'High-Value Repeat',users:12480,ltv:'$892',churnRisk:'Low',avgOrders:14.2},
+      {segment:'New High-Intent',users:8720,ltv:'$214',churnRisk:'Medium',avgOrders:2.1},
+      {segment:'Lapsed (90d)',users:22400,ltv:'$341',churnRisk:'High',avgOrders:4.8},
+      {segment:'Occasional',users:31200,ltv:'$178',churnRisk:'Medium',avgOrders:3.4},
+      {segment:'Mobile-First',users:19800,ltv:'$456',churnRisk:'Low',avgOrders:7.9}
+    ]
+  };
+}
+
+function mockProducts() {
+  const prods = ['Wireless Earbuds Pro','Organic Food Bundle','Running Shoes X3','Smart Home Hub','Vitamin C Serum','Yoga Mat Premium','Novel: The Last Light','LEGO City Builder','Coffee Maker Deluxe','Laptop Stand Aluminum'];
+  return {
+    topProducts: prods.map(name=>({name,category:CATS[r(0,CATS.length-1)],revenue:r(18000,180000),units:r(200,4800),margin:rf(12,64),rating:rf(3.4,5.0,1),reviews:r(48,2800),stock:r(0,1200),trend:rf(-12,35)})).sort((a,b)=>b.revenue-a.revenue),
+    inventory: CATS.map(cat=>({category:cat,inStock:r(800,5000),lowStock:r(20,180),outStock:r(2,40),value:r(80000,600000)}))
+  };
+}
+
+function mockOrders() {
+  const STATUS=['Completed','Processing','Shipped','Cancelled','Refunded'];
+  const NAMES=['Priya S.','Raj M.','Emily C.','Liam T.','Fatima K.','Carlos D.','Sarah B.','Ahmed H.','Lin Z.','Nina P.'];
+  return Array.from({length:200},(_,k)=>{
+    const s=STATUS[r(0,4)];
+    return {id:`ORD-${100000+k}`,customer:NAMES[r(0,NAMES.length-1)],category:CATS[r(0,CATS.length-1)],amount:rf(12,480),status:s,date:new Date(Date.now()-r(0,7776000000)).toISOString().split('T')[0],items:r(1,8),region:REGS[r(0,REGS.length-1)]};
+  });
+}
+
+/* ════════════════════════════════════════════
+   VIEW LOADER
+════════════════════════════════════════════ */
+async function loadView(view) {
+  if (view === 'overview') await loadOverview();
+  else if (view === 'sales')    await loadSales();
+  else if (view === 'users')    await loadUsers();
+  else if (view === 'products') await loadProducts();
+  else if (view === 'orders')   await loadOrders();
+  else if (view === 'reports')  await loadReports();
+}
+
+/* ════════════════════════════════════════════
+   CHART HELPERS
+════════════════════════════════════════════ */
+const C = {
+  blue:'#38bdf8', blue_a:'rgba(56,189,248,.18)',
+  amber:'#f59e0b',amber_a:'rgba(245,158,11,.18)',
+  green:'#10b981',green_a:'rgba(16,185,129,.18)',
+  red:'#ef4444',  red_a:'rgba(239,68,68,.18)',
+  purple:'#a78bfa',purple_a:'rgba(167,139,250,.18)',
+  text2:'#8899b4', border:'#1e2a3e',
+  fonts:"'DM Sans', sans-serif"
+};
+
+const BASE_OPTS = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: { labels: { color: C.text2, font: { family: C.fonts, size: 11 }, boxWidth: 10, padding: 16 } },
+    tooltip: {
+      backgroundColor: '#111827',
+      borderColor: '#1e2a3e',
+      borderWidth: 1,
+      titleColor: '#dde4f0',
+      bodyColor: '#8899b4',
+      titleFont: { family: "'Space Mono', monospace", size: 11 },
+      bodyFont:  { family: "'Space Mono', monospace", size: 11 },
+      padding: 10
+    }
+  },
+  scales: {
+    x: { grid: { color: C.border }, ticks: { color: C.text2, font: { family: C.fonts, size: 11 } } },
+    y: { grid: { color: C.border }, ticks: { color: C.text2, font: { family: C.fonts, size: 11 } } }
+  }
+};
+
+function mkChart(id, type, data, opts = {}) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (CHARTS[id]) { CHARTS[id].destroy(); }
+  const merged = deepMerge(BASE_OPTS, opts);
+  CHARTS[id] = new Chart(canvas, { type, data, options: merged });
+  return CHARTS[id];
+}
+
+function deepMerge(a, b) {
+  const out = Object.assign({}, a);
+  for (const k of Object.keys(b || {})) {
+    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) {
+      out[k] = deepMerge(a[k], b[k]);
+    } else { out[k] = b[k]; }
+  }
+  return out;
+}
+
+/* ════════════════════════════════════════════
+   OVERVIEW
+════════════════════════════════════════════ */
+async function loadOverview() {
+  const data = (await apiFetch('/overview')) || mockOverview();
+  renderKPIs(data.kpis);
+  renderRevenueChart(data.revenueByMonth);
+  renderCategoryChart(data.categoryBreakdown);
+  renderCategoryTable(data.categoryBreakdown);
+  renderActivity(data.recentActivity);
+}
+
+function renderKPIs(kpis) {
+  const grid = document.getElementById('kpi-grid');
+  const icons = { revenue:'◈', orders:'◱', activeUsers:'◉', conversionRate:'⬡', avgOrderValue:'◫', returnRate:'↩' };
+  grid.innerHTML = Object.entries(kpis).map(([k, kpi]) => {
+    const isUp = kpi.value >= kpi.prev;
+    const isGoodDown = k === 'returnRate';
+    const reallyUp = isGoodDown ? !isUp : isUp;
+    const pct = (((kpi.value - kpi.prev) / kpi.prev) * 100).toFixed(1);
+    const val = kpi.unit === '$' ? `$${kpi.value >= 1000000 ? (kpi.value/1000000).toFixed(2)+'M' : kpi.value >= 1000 ? (kpi.value/1000).toFixed(1)+'K' : kpi.value}` : `${kpi.value}${kpi.unit}`;
+    return `<div class="kpi-card">
+      <div class="kpi-label">${kpi.label}</div>
+      <div class="kpi-value mono">${val}</div>
+      <div class="kpi-delta ${reallyUp?'up':'down'}">${reallyUp?'▲':'▼'} ${Math.abs(pct)}% vs prev period</div>
+      <div class="kpi-icon">${icons[k]||'◆'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderRevenueChart(months) {
+  mkChart('chart-revenue', 'line', {
+    labels: months.map(m => m.month),
+    datasets: [
+      { label: 'Revenue', data: months.map(m => m.revenue), borderColor: C.blue, backgroundColor: C.blue_a, fill: true, tension: 0.4, pointRadius: 3 },
+      { label: 'Target',  data: months.map(m => m.target),  borderColor: C.amber, borderDash: [5,4], backgroundColor: 'transparent', tension: 0.4, pointRadius: 0 },
+      { label: 'Orders ×$10', data: months.map(m => m.orders*10), borderColor: C.purple, backgroundColor: 'transparent', tension: 0.4, pointRadius: 2, yAxisID: 'y' }
+    ]
+  });
+}
+
+function renderCategoryChart(cats) {
+  const top = cats.slice(0, 6);
+  mkChart('chart-category', 'doughnut', {
+    labels: top.map(c => c.category),
+    datasets: [{ data: top.map(c => c.revenue), backgroundColor: [C.blue, C.purple, C.amber, C.green, C.red, '#06b6d4'], borderColor: '#0d1117', borderWidth: 3, hoverOffset: 8 }]
+  }, {
+    plugins: { legend: { position: 'bottom', labels: { color: C.text2, font: { family: C.fonts, size: 10 }, padding: 8, boxWidth: 8 } } },
+    scales: { x: { display: false }, y: { display: false } },
+    cutout: '68%'
+  });
+}
+
+function renderCategoryTable(cats) {
+  const total = cats.reduce((s, c) => s + c.revenue, 0);
+  const tbody = document.querySelector('#tbl-categories tbody');
+  tbody.innerHTML = cats.slice(0,6).map(c => {
+    const share = ((c.revenue / total) * 100).toFixed(1);
+    const cls = c.growth >= 0 ? 'pos' : 'neg';
+    return `<tr>
+      <td>${c.category}</td>
+      <td class="mono">$${(c.revenue/1000).toFixed(0)}K</td>
+      <td class="mono">${c.orders.toLocaleString()}</td>
+      <td><span class="delta-chip ${cls}">${c.growth>=0?'+':''}${c.growth.toFixed(1)}%</span></td>
+      <td style="min-width:80px">
+        <div class="prog-bar-wrap"><div class="prog-bar" style="width:${share}%;background:var(--blue)"></div></div>
+        <span style="font-size:10px;color:var(--text3);font-family:var(--font-data)">${share}%</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderActivity(items) {
+  const colors = { order:'var(--green)', refund:'var(--red)', user_signup:'var(--blue)', review:'var(--amber)', low_stock:'var(--red)' };
+  document.getElementById('activity-feed').innerHTML = items.map(a => `
+    <div class="activity-item">
+      <div class="activity-dot" style="background:${colors[a.type]||'var(--text3)'}"></div>
+      <div class="activity-text">
+        <div class="activity-label">${a.label}</div>
+        <div class="activity-meta">${a.time}</div>
+      </div>
+      ${a.value ? `<div class="activity-val">${a.value}</div>` : ''}
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════════
+   SALES
+════════════════════════════════════════════ */
+async function loadSales() {
+  const data = (await apiFetch(`/sales?period=${getPeriod()}`)) || mockSales(getPeriod());
+  renderSalesTimeline(data.timeline);
+  renderFunnel(data.funnel);
+  renderRegionsChart(data.byRegion);
+  renderChannelTable(data.byChannel);
+}
+
+function renderSalesTimeline(tl) {
+  mkChart('chart-sales-timeline','bar',{
+    labels: tl.map(m=>m.month),
+    datasets:[
+      {label:'Gross',data:tl.map(m=>m.gross),backgroundColor:C.blue_a,borderColor:C.blue,borderWidth:1.5,borderRadius:3},
+      {label:'Net',  data:tl.map(m=>m.net),  backgroundColor:C.green_a,borderColor:C.green,borderWidth:1.5,borderRadius:3},
+      {label:'Refunds',data:tl.map(m=>m.refunds),backgroundColor:C.red_a,borderColor:C.red,borderWidth:1.5,borderRadius:3}
+    ]
+  });
+}
+
+function renderFunnel(funnel) {
+  const max = funnel[0].count;
+  document.getElementById('funnel-container').innerHTML = funnel.map((f,i) => {
+    const pct = ((f.count/max)*100).toFixed(0);
+    const conv = i>0 ? ((f.count/funnel[i-1].count)*100).toFixed(1)+'%' : '—';
+    return `<div class="funnel-row">
+      <div class="funnel-stage">${f.stage}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%"></div></div>
+      <div class="funnel-count mono">${f.count.toLocaleString()}</div>
+      <div class="funnel-pct">${conv}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderRegionsChart(regions) {
+  mkChart('chart-regions','bar',{
+    labels: regions.map(r=>r.region),
+    datasets:[
+      {label:'Revenue',data:regions.map(r=>r.revenue),backgroundColor:regions.map((_,i)=>[C.blue,C.purple,C.amber,C.green,C.red][i]),borderRadius:4}
+    ]
+  },{plugins:{legend:{display:false}}});
+}
+
+function renderChannelTable(channels) {
+  document.querySelector('#tbl-channels tbody').innerHTML = channels.map(ch=>`
+    <tr>
+      <td><span style="font-weight:500">${ch.channel}</span></td>
+      <td class="mono">$${(ch.revenue/1000).toFixed(0)}K</td>
+      <td class="mono">${ch.orders.toLocaleString()}</td>
+      <td class="mono">$${ch.cac.toFixed(2)}</td>
+      <td class="mono">${ch.roas.toFixed(1)}×</td>
+      <td><span class="delta-chip pos">${ch.cvr.toFixed(1)}%</span></td>
+    </tr>`).join('');
+}
+
+/* ════════════════════════════════════════════
+   USERS
+════════════════════════════════════════════ */
+async function loadUsers() {
+  const data = (await apiFetch('/users')) || mockUsers();
+  renderUserGrowth(data.growth);
+  renderDemographics(data.demographics);
+  renderSegments(data.topSegments);
+  renderRetention(data.retention);
+}
+
+function renderUserGrowth(growth) {
+  mkChart('chart-user-growth','line',{
+    labels: growth.map(g=>g.month),
+    datasets:[
+      {label:'New',      data:growth.map(g=>g.new),      borderColor:C.blue,  backgroundColor:C.blue_a, fill:true, tension:.4, pointRadius:2},
+      {label:'Returning',data:growth.map(g=>g.returning),borderColor:C.green, backgroundColor:'transparent', tension:.4, pointRadius:2},
+      {label:'Churned',  data:growth.map(g=>g.churned),  borderColor:C.red,   backgroundColor:'transparent', tension:.4, pointRadius:2, borderDash:[4,3]}
+    ]
+  });
+}
+
+function renderDemographics(demo) {
+  const ageColors = [C.blue,C.purple,C.amber,C.green,C.red];
+  const ageRows = demo.age.map((a,i)=>`
+    <div class="demo-row">
+      <div class="demo-label">${a.group}</div>
+      <div class="demo-bar-wrap"><div class="demo-bar" style="width:${a.pct*2}%;background:${ageColors[i]}"></div></div>
+      <div class="demo-pct">${a.pct}%</div>
+    </div>`).join('');
+
+  const devRows = demo.device.map((d,i)=>`
+    <div class="demo-row">
+      <div class="demo-label">${d.type}</div>
+      <div class="demo-bar-wrap"><div class="demo-bar" style="width:${d.pct}%;background:${[C.blue,C.purple,C.amber][i]}"></div></div>
+      <div class="demo-pct">${d.pct}%</div>
+    </div>`).join('');
+
+  document.getElementById('demographics-panel').innerHTML = `
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:10px">Age Groups</div>
+    ${ageRows}
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin:14px 0 10px">Device</div>
+    ${devRows}`;
+}
+
+function renderSegments(segs) {
+  const riskBadge = r => r==='Low'?'badge-green':r==='High'?'badge-red':'badge-amber';
+  document.querySelector('#tbl-segments tbody').innerHTML = segs.map(s=>`
+    <tr>
+      <td style="font-weight:500">${s.segment}</td>
+      <td class="mono">${s.users.toLocaleString()}</td>
+      <td class="mono">${s.ltv}</td>
+      <td class="mono">${s.avgOrders}</td>
+      <td><span class="badge ${riskBadge(s.churnRisk)}">${s.churnRisk}</span></td>
+    </tr>`).join('');
+}
+
+function renderRetention(ret) {
+  mkChart('chart-retention','line',{
+    labels: ret.map(r=>r.month),
+    datasets:[
+      {label:'Day 1',  data:ret.map(r=>r.d1),  borderColor:C.blue,   backgroundColor:'transparent',tension:.4,pointRadius:2},
+      {label:'Day 7',  data:ret.map(r=>r.d7),  borderColor:C.purple, backgroundColor:'transparent',tension:.4,pointRadius:2},
+      {label:'Day 30', data:ret.map(r=>r.d30), borderColor:C.amber,  backgroundColor:'transparent',tension:.4,pointRadius:2},
+      {label:'Day 90', data:ret.map(r=>r.d90), borderColor:C.green,  backgroundColor:'transparent',tension:.4,pointRadius:2}
+    ]
+  },{
+    scales:{ y:{ min:0, max:80, ticks:{ callback: v=>v+'%', color:C.text2, font:{family:C.fonts,size:11} }, grid:{color:C.border} }, x:{grid:{color:C.border},ticks:{color:C.text2,font:{family:C.fonts,size:11}}} }
+  });
+}
+
+/* ════════════════════════════════════════════
+   PRODUCTS
+════════════════════════════════════════════ */
+async function loadProducts() {
+  const data = (await apiFetch('/products')) || mockProducts();
+  renderProductCatChart(data.inventory);
+  renderInventoryTable(data.inventory);
+  renderProductsTable(data.topProducts);
+}
+
+function renderProductCatChart(inv) {
+  mkChart('chart-prod-cat','bar',{
+    labels: inv.map(i=>i.category),
+    datasets:[
+      {label:'In Stock', data:inv.map(i=>i.inStock), backgroundColor:C.green_a, borderColor:C.green, borderWidth:1.5, borderRadius:3},
+      {label:'Low Stock',data:inv.map(i=>i.lowStock),backgroundColor:C.amber_a, borderColor:C.amber, borderWidth:1.5, borderRadius:3},
+      {label:'Out',      data:inv.map(i=>i.outStock), backgroundColor:C.red_a,  borderColor:C.red,   borderWidth:1.5, borderRadius:3}
+    ]
+  },{plugins:{legend:{position:'top'}}});
+}
+
+function renderInventoryTable(inv) {
+  document.querySelector('#tbl-inventory tbody').innerHTML = inv.map(i=>`
+    <tr>
+      <td>${i.category}</td>
+      <td class="mono">${i.inStock.toLocaleString()}</td>
+      <td><span class="badge ${i.lowStock>100?'badge-amber':'badge-green'}">${i.lowStock}</span></td>
+      <td><span class="badge ${i.outStock>20?'badge-red':'badge-amber'}">${i.outStock}</span></td>
+      <td class="mono">$${(i.value/1000).toFixed(0)}K</td>
+    </tr>`).join('');
+}
+
+function renderProductsTable(prods) {
+  document.querySelector('#tbl-products tbody').innerHTML = prods.map((p,i)=>{
+    const tc = p.trend>=0?'pos':'neg';
+    const stars = '★'.repeat(Math.round(p.rating)) + '☆'.repeat(5-Math.round(p.rating));
+    return `<tr>
+      <td class="mono" style="color:var(--text3)">#${i+1}</td>
+      <td style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</td>
+      <td><span class="badge badge-blue">${p.category}</span></td>
+      <td class="mono">$${(p.revenue/1000).toFixed(1)}K</td>
+      <td class="mono">${p.units.toLocaleString()}</td>
+      <td class="mono">${p.margin.toFixed(1)}%</td>
+      <td style="color:var(--amber);letter-spacing:-1px;font-size:11px">${stars} <span style="color:var(--text2)">${p.rating}</span></td>
+      <td><span class="delta-chip ${tc}">${p.trend>=0?'+':''}${p.trend.toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   ORDERS
+════════════════════════════════════════════ */
+async function loadOrders() {
+  ALL_ORDERS = mockOrders();
+  renderOrdersKPIs(ALL_ORDERS);
+  ORDERS_PAGE = 1;
+  renderOrdersTable();
+}
+
+function renderOrdersKPIs(orders) {
+  const cnt = s => orders.filter(o=>o.status===s).length;
+  const rev = orders.reduce((s,o)=>s+o.amount,0);
+  document.getElementById('orders-kpi').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value mono">${orders.length.toLocaleString()}</div><div class="kpi-icon">◱</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value mono">$${(rev/1000).toFixed(1)}K</div><div class="kpi-icon">◈</div></div>
+    <div class="kpi-card"><div class="kpi-label">Completed</div><div class="kpi-value mono" style="color:var(--green)">${cnt('Completed')}</div><div class="kpi-icon">✓</div></div>
+    <div class="kpi-card"><div class="kpi-label">Processing</div><div class="kpi-value mono" style="color:var(--blue)">${cnt('Processing')}</div><div class="kpi-icon">⟳</div></div>
+    <div class="kpi-card"><div class="kpi-label">Cancelled</div><div class="kpi-value mono" style="color:var(--red)">${cnt('Cancelled')}</div><div class="kpi-icon">✕</div></div>
+  `;
+}
+
+function filterOrders() {
+  ORDERS_PAGE = 1;
+  renderOrdersTable();
+}
+
+function getFilteredOrders() {
+  const q      = document.getElementById('order-search')?.value.toLowerCase() || '';
+  const status = document.getElementById('order-status-filter')?.value || '';
+  const region = document.getElementById('order-region-filter')?.value || '';
+  return ALL_ORDERS.filter(o =>
+    (!q      || o.id.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q)) &&
+    (!status || o.status === status) &&
+    (!region || o.region === region)
+  );
+}
+
+function renderOrdersTable() {
+  const filtered = getFilteredOrders();
+  const start = (ORDERS_PAGE - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
+  const statusBadge = { Completed:'badge-green', Processing:'badge-blue', Shipped:'badge-purple', Cancelled:'badge-red', Refunded:'badge-amber' };
+
+  document.querySelector('#tbl-orders tbody').innerHTML = page.map(o=>`
+    <tr>
+      <td class="mono" style="color:var(--blue)">${o.id}</td>
+      <td>${o.customer}</td>
+      <td><span class="badge badge-blue">${o.category}</span></td>
+      <td class="mono">$${o.amount.toFixed(2)}</td>
+      <td class="mono">${o.items}</td>
+      <td style="color:var(--text2)">${o.region}</td>
+      <td><span class="badge ${statusBadge[o.status]||''}">${o.status}</span></td>
+      <td class="mono" style="color:var(--text3)">${o.date}</td>
+    </tr>`).join('');
+
+  renderPagination(filtered.length);
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  let html = `<button class="pag-btn" onclick="goPage(${ORDERS_PAGE-1})" ${ORDERS_PAGE===1?'disabled':''}>← Prev</button>`;
+  const range = Array.from({length:Math.min(pages,7)},(_,i)=>{
+    const pFirst = Math.max(1, ORDERS_PAGE-3);
+    return Math.min(pFirst+i, pages);
+  }).filter((v,i,a)=>a.indexOf(v)===i);
+  range.forEach(p => html += `<button class="pag-btn ${p===ORDERS_PAGE?'active':''}" onclick="goPage(${p})">${p}</button>`);
+  html += `<button class="pag-btn" onclick="goPage(${ORDERS_PAGE+1})" ${ORDERS_PAGE>=pages?'disabled':''}>Next →</button>`;
+  html += `<div class="pag-info">${total} orders · page ${ORDERS_PAGE}/${pages}</div>`;
+  document.getElementById('orders-pagination').innerHTML = html;
+}
+
+function goPage(p) {
+  const total = getFilteredOrders().length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  ORDERS_PAGE = p;
+  renderOrdersTable();
+}
+
+/* ════════════════════════════════════════════
+   REPORTS
+════════════════════════════════════════════ */
+async function loadReports() {
+  const data = (await apiFetch('/reports')) || {
+    available:[
+      {id:'r1',name:'Monthly Revenue Summary',type:'Financial',size:'284 KB',generated:'2025-01-20',format:'PDF'},
+      {id:'r2',name:'User Acquisition Report',type:'Marketing',size:'196 KB',generated:'2025-01-19',format:'CSV'},
+      {id:'r3',name:'Inventory Status Q4',type:'Operations',size:'512 KB',generated:'2025-01-15',format:'XLSX'},
+      {id:'r4',name:'Sales by Category 2024',type:'Sales',size:'340 KB',generated:'2025-01-10',format:'PDF'},
+      {id:'r5',name:'Customer Retention',type:'CRM',size:'228 KB',generated:'2025-01-08',format:'PDF'}
+    ],
+    scheduled:[
+      {name:'Weekly Sales Digest',frequency:'Weekly',nextRun:'Every Monday 08:00',recipients:4},
+      {name:'Monthly KPI Dashboard',frequency:'Monthly',nextRun:'Feb 1 09:00',recipients:8},
+      {name:'Inventory Alert',frequency:'Daily',nextRun:'Tomorrow 06:00',recipients:2}
+    ]
+  };
+
+  const fmtIcon = f=>({PDF:'📄',CSV:'📊',XLSX:'📋'})[f]||'📁';
+  const fmtBg   = f=>({PDF:'rgba(239,68,68,.1)',CSV:'rgba(16,185,129,.1)',XLSX:'rgba(56,189,248,.1)'})[f]||'var(--bg3)';
+
+  document.getElementById('reports-list').innerHTML = data.available.map(r=>`
+    <div class="report-row">
+      <div class="report-icon" style="background:${fmtBg(r.format)}">${fmtIcon(r.format)}</div>
+      <div>
+        <div class="report-name">${r.name}</div>
+        <div class="report-meta">${r.type} · ${r.size} · ${r.generated}</div>
+      </div>
+      <div class="report-type"><span class="badge badge-blue">${r.format}</span></div>
+      <button class="download-btn" onclick="alert('Downloading: ${r.name}')">↓ Download</button>
+    </div>`).join('');
+
+  document.getElementById('scheduled-list').innerHTML = data.scheduled.map(s=>`
+    <div class="report-row">
+      <div class="report-icon" style="background:rgba(245,158,11,.1)">⏱</div>
+      <div>
+        <div class="report-name">${s.name}</div>
+        <div class="report-meta">${s.nextRun} · ${s.recipients} recipients</div>
+      </div>
+      <span class="badge badge-amber">${s.frequency}</span>
+    </div>`).join('');
+
+  document.getElementById('alerts-panel').innerHTML = `
+    <div class="alert-row warn">⚠ 3 products are low on stock — check inventory</div>
+    <div class="alert-row info">ℹ February report is ready to download</div>
+    <div class="alert-row success">✓ Revenue target hit 3 days ahead of schedule</div>`;
+}
+</script>
+</body>
+</html>
